@@ -6,7 +6,9 @@ charset-normalizer==3.5.1
 click==8.5.0
 fastapi==0.141.1
 h11==0.16.0
+httpcore==1.0.9
 httpcore2==2.12.0
+httpx==0.28.1
 httpx2==2.12.0
 idna==3.19
 iniconfig==2.3.0
@@ -21,6 +23,7 @@ pydantic_core==2.46.5
 Pygments==2.21.0
 pytest==9.1.1
 python-dotenv==1.2.3
+python-multipart==0.0.32
 requests==2.34.2
 sniffio==1.3.1
 SQLAlchemy==2.0.52
