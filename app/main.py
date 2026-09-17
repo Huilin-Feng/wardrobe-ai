@@ -17,6 +17,9 @@ from app.database import (
     init_db,
 )
 from app.models import ClothingCreate, ClothingResponse
+from app.clothing_analyzer import ClothingAnalysisError, analyze_clothing
+from app.weather_service import CityNotFoundError, WeatherServiceError, get_weather
+
 
 app = FastAPI(
     title="AI Wardrobe Assistant",
@@ -78,7 +81,7 @@ def create_clothing(payload: ClothingCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/clothing/upload", response_model=ClothingResponse, status_code=201)
 def upload_clothing(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Upload an image file. Recognition is stubbed out until Day 3."""
+    """Upload an image, analyze it with the Vision API, and store the result."""
     extension = Path(file.filename or "").suffix.lower()
     if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -92,16 +95,13 @@ def upload_clothing(file: UploadFile = File(...), db: Session = Depends(get_db))
     with open(stored_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Placeholder values — Day 3 replaces these with Vision API output
-    return add_item(
-        db,
-        image_url=stored_path,
-        category="unknown",
-        color="unknown",
-        style="unknown",
-        warmth_level=3,
-        description="Pending AI analysis",
-    )
+    try:
+        attributes = analyze_clothing(stored_path)
+    except ClothingAnalysisError as error:
+        os.remove(stored_path)
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+    return add_item(db, image_url=stored_path, **attributes)
 
 
 @app.delete("/api/clothing/{item_id}", status_code=204)
@@ -109,3 +109,13 @@ def remove_clothing(item_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a clothing item."""
     if not delete_item(db, item_id):
         raise HTTPException(status_code=404, detail="Clothing item not found")
+
+@app.get("/api/weather")
+def weather(city: str, db: Session = Depends(get_db)) -> dict:
+    """Return current weather for a city."""
+    try:
+        return get_weather(city)
+    except CityNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WeatherServiceError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error

@@ -53,9 +53,9 @@ LLM  ->  final selection + natural language styling advice
 
 ## Roadmap
 
-- [x] Project setup, configuration management, database layer
-- [ ] REST API endpoints (CRUD)
-- [ ] Clothing recognition via OpenAI Vision API
+- [✅] Project setup, configuration management, database layer
+- [✅] REST API endpoints (CRUD)
+- [✅] Clothing recognition via OpenAI Vision API
 - [ ] Weather integration
 - [ ] Multi-dimensional scoring engine
 - [ ] LLM recommendation layer
