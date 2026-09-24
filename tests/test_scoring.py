@@ -2,12 +2,15 @@ import pytest
 
 from app.clothing_analyzer import VALID_STYLES
 from app.scoring_engine import (
+    HUE_GAP_TO_SCORE,
+    NEUTRAL_PAIR_SCORE,
     OCCASION_MATRIX,
     TEMPERATURE_TO_IDEAL_WARMTH,
     UNKNOWN_STYLE_SCORE,
     VALID_OCCASIONS,
     WARMTH_GAP_TO_SCORE,
     _interpolate,
+    color_harmony_score,
     occasion_score,
     temperature_score,
 )
@@ -139,3 +142,51 @@ def test_all_matrix_values_between_zero_and_one():
 def test_matrix_covers_every_style_the_analyzer_can_produce():
     """If the Vision layer adds a style, the scoring matrix must be updated too."""
     assert set(OCCASION_MATRIX) == VALID_STYLES
+
+# ---------- color_harmony_score ----------
+
+YELLOW_POLO = "#F6EB61"
+
+
+def test_color_same_hue_is_perfect():
+    assert color_harmony_score(YELLOW_POLO, YELLOW_POLO) == 1.0
+
+
+def test_color_neutral_pair_gets_fixed_score():
+    assert color_harmony_score(YELLOW_POLO, "#1E3A5F") == NEUTRAL_PAIR_SCORE
+
+
+def test_color_two_neutrals_get_fixed_score():
+    assert color_harmony_score("#000000", "#FFFFFF") == NEUTRAL_PAIR_SCORE
+
+
+def test_color_unreadable_hex_is_treated_as_neutral():
+    assert color_harmony_score(YELLOW_POLO, "#ZZZZZZ") == NEUTRAL_PAIR_SCORE
+
+
+@pytest.mark.parametrize("other, name", [
+    ("#9B30FF", "bright purple"),
+    ("#3FA9F5", "sky blue"),
+    ("#1E60FF", "bright blue"),
+])
+def test_color_vivid_clashes_with_yellow_score_low(other, name):
+    """Found by testing real pairs: all three looked bad next to the yellow polo."""
+    assert color_harmony_score(YELLOW_POLO, other) < 0.4, name
+
+
+def test_color_navy_beats_orange_with_yellow():
+    """Design decision: a neutral pairing should outrank an adjacent-hue pairing."""
+    navy = color_harmony_score(YELLOW_POLO, "#1E3A5F")
+    orange = color_harmony_score(YELLOW_POLO, "#FFA500")
+    assert navy > orange
+
+
+def test_neutral_score_beats_every_clash_but_not_a_perfect_match():
+    worst = min(score for _, score in HUE_GAP_TO_SCORE)
+    assert worst < NEUTRAL_PAIR_SCORE < 1.0
+
+
+def test_hue_table_covers_full_range_in_order():
+    gaps = [g for g, _ in HUE_GAP_TO_SCORE]
+    assert gaps == sorted(gaps)
+    assert gaps[0] == 0 and gaps[-1] == 180

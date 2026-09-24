@@ -1,3 +1,26 @@
+from app.color_utils import hue_distance, is_neutral
+
+
+def _interpolate(x: float, points: list[tuple[float, float]]) -> float:
+    """Piecewise linear interpolation over points sorted by x ascending.
+
+    Values outside the range are clamped to the nearest endpoint.
+    """
+    if x <= points[0][0]:
+        return points[0][1]
+    if x >= points[-1][0]:
+        return points[-1][1]
+
+    for (x0, y0), (x1, y1) in zip(points, points[1:]):
+        if x0 <= x <= x1:
+            ratio = (x - x0) / (x1 - x0)
+            return y0 + ratio * (y1 - y0)
+
+    return points[-1][1]
+
+
+# ---------- Temperature score ----------
+
 # Temperature (°C) -> ideal warmth level.
 # Non-linear on purpose: people are more sensitive to change on the cold end,
 # so the cold side moves one level every 5°C while the warm side moves every 10°C.
@@ -20,28 +43,12 @@ WARMTH_GAP_TO_SCORE = [
 ]
 
 
-def _interpolate(x: float, points: list[tuple[float, float]]) -> float:
-    """Piecewise linear interpolation over points sorted by x ascending.
-
-    Values outside the range are clamped to the nearest endpoint.
-    """
-    if x <= points[0][0]:
-        return points[0][1]
-    if x >= points[-1][0]:
-        return points[-1][1]
-
-    for (x0, y0), (x1, y1) in zip(points, points[1:]):
-        if x0 <= x <= x1:
-            ratio = (x - x0) / (x1 - x0)
-            return y0 + ratio * (y1 - y0)
-
-    return points[-1][1]
-
 def temperature_score(warmth_level: int, temp_celsius: float) -> float:
     """Score how well a garment's warmth suits the current temperature (0 to 1)."""
     ideal = _interpolate(temp_celsius, TEMPERATURE_TO_IDEAL_WARMTH)
     gap = abs(warmth_level - ideal)
     return _interpolate(gap, WARMTH_GAP_TO_SCORE)
+
 
 # ---------- Occasion score ----------
 
@@ -80,3 +87,35 @@ def occasion_score(style: str, occasion: str) -> float:
     if row is None:
         return UNKNOWN_STYLE_SCORE
     return row[occasion]
+
+
+# ---------- Color harmony ----------
+
+# Hue gap in degrees -> score. Deliberately non-monotonic: some angles on the
+# wheel pair better than their neighbours.
+HUE_GAP_TO_SCORE = [
+    (0, 1.0),
+    (30, 0.7),
+    (60, 0.7),
+    (90, 0.8),
+    (120, 0.6),
+    (150, 0.3),
+    (180, 0.2),
+]
+
+# A neutral paired with anything is a safe choice: it beats adjacent-hue pairs and
+# every clash, but a same-hue match can still rank above it.
+NEUTRAL_PAIR_SCORE = 0.85
+
+
+def color_harmony_score(hex_a: str, hex_b: str) -> float:
+    """Score how well two garment colors go together (0 to 1).
+
+    If either garment is neutral (black, white, grey, beige, navy...), hue is not
+    meaningful and the pair gets a fixed safe score. Otherwise the score comes from
+    how far apart the two hues sit on the color wheel.
+    """
+    if is_neutral(hex_a) or is_neutral(hex_b):
+        return NEUTRAL_PAIR_SCORE
+    gap = hue_distance(hex_a, hex_b)
+    return _interpolate(gap, HUE_GAP_TO_SCORE)
