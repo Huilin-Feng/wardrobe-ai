@@ -2,6 +2,8 @@ import os
 import shutil
 import uuid
 from pathlib import Path
+from app.recommender import recommend_outfit
+from app.scoring_engine import IncompleteWardrobeError, generate_outfit_candidates
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -16,7 +18,7 @@ from app.database import (
     get_item_by_id,
     init_db,
 )
-from app.models import ClothingCreate, ClothingResponse
+from app.models import ClothingCreate, ClothingResponse, RecommendRequest
 from app.clothing_analyzer import ClothingAnalysisError, analyze_clothing
 from app.weather_service import CityNotFoundError, WeatherServiceError, get_weather
 
@@ -119,3 +121,35 @@ def weather(city: str, db: Session = Depends(get_db)) -> dict:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except WeatherServiceError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
+
+@app.post("/api/recommend")
+def recommend(payload: RecommendRequest, db: Session = Depends(get_db)) -> dict:
+    """Recommend an outfit for the current weather in a city and an occasion."""
+    # Weather is critical: without a temperature there is nothing to score.
+    try:
+        weather_data = get_weather(payload.city)
+    except CityNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WeatherServiceError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+    wardrobe = [item.to_dict() for item in get_all_items(db)]
+
+    try:
+        candidates = generate_outfit_candidates(
+            wardrobe, weather_data["temp_celsius"], payload.occasion
+        )
+    except IncompleteWardrobeError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "Add at least one item in each missing category",
+                "missing": error.missing,
+            },
+        ) from error
+
+    # The LLM is optional: recommend_outfit never fails, it degrades instead.
+    items_by_id = {item["id"]: item for item in wardrobe}
+    result = recommend_outfit(candidates, items_by_id, weather_data, payload.occasion)
+
+    return {"weather": weather_data, "occasion": payload.occasion, **result}

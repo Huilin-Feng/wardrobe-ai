@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,3 +30,13 @@ class ClothingCreate(BaseModel):
     warmth_level: int = Field(ge=1, le=5, description="1 = lightest, 5 = warmest")
     hex_color: str = "#000000"
     description: str = ""
+
+# Must match VALID_OCCASIONS in scoring_engine; a test enforces this.
+Occasion = Literal["casual", "work", "date", "formal", "workout"]
+
+
+class RecommendRequest(BaseModel):
+    """Payload for requesting an outfit recommendation."""
+
+    city: str = Field(min_length=1, description="City name for the weather lookup")
+    occasion: Occasion

@@ -6,6 +6,12 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base, get_db
 from app.main import app
+from typing import get_args
+from unittest.mock import patch
+
+from app.models import Occasion
+from app.scoring_engine import VALID_OCCASIONS
+from app.weather_service import CityNotFoundError, WeatherServiceError
 
 
 @pytest.fixture
@@ -176,3 +182,72 @@ def test_upload_rejects_unsupported_extension(client):
         files={"file": ("notes.txt", b"not an image", "text/plain")},
     )
     assert response.status_code == 400
+
+# ---------- Recommend ----------
+
+FAKE_WEATHER = {
+    "city": "San Jose",
+    "temp_celsius": 21.0,
+    "feels_like_celsius": 21.0,
+    "humidity": 50,
+    "condition": "Clouds",
+    "description": "few clouds",
+}
+
+
+def _add_wardrobe(client, sample_payload, include_shoes=True):
+    client.post("/api/clothing", json={**sample_payload, "category": "top"})
+    client.post("/api/clothing", json={
+        **sample_payload, "category": "bottom", "color": "navy", "hex_color": "#1E3A5F",
+    })
+    if include_shoes:
+        client.post("/api/clothing", json={
+            **sample_payload, "category": "shoes", "color": "black", "hex_color": "#000000",
+        })
+
+
+@patch("app.recommender._get_client", return_value=None)
+@patch("app.main.get_weather", return_value=FAKE_WEATHER)
+def test_recommend_returns_outfits(_weather, _llm, client, sample_payload):
+    _add_wardrobe(client, sample_payload)
+
+    response = client.post("/api/recommend", json={"city": "San Jose", "occasion": "casual"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["weather"]["temp_celsius"] == 21.0
+    assert body["recommended_index"] == 0
+    assert body["source"] == "fallback"
+    assert len(body["outfits"]) == 1
+
+
+@patch("app.main.get_weather", return_value=FAKE_WEATHER)
+def test_recommend_reports_missing_category(_weather, client, sample_payload):
+    _add_wardrobe(client, sample_payload, include_shoes=False)
+
+    response = client.post("/api/recommend", json={"city": "San Jose", "occasion": "casual"})
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["missing"] == ["shoes"]
+
+
+@patch("app.main.get_weather", side_effect=CityNotFoundError("City not found: Atlantis"))
+def test_recommend_unknown_city_returns_404(_weather, client):
+    response = client.post("/api/recommend", json={"city": "Atlantis", "occasion": "casual"})
+    assert response.status_code == 404
+
+
+@patch("app.main.get_weather", side_effect=WeatherServiceError("provider down"))
+def test_recommend_weather_outage_returns_502(_weather, client):
+    response = client.post("/api/recommend", json={"city": "San Jose", "occasion": "casual"})
+    assert response.status_code == 502
+
+
+def test_recommend_rejects_unknown_occasion(client):
+    response = client.post("/api/recommend", json={"city": "San Jose", "occasion": "wedding"})
+    assert response.status_code == 422
+
+
+def test_api_occasions_match_scoring_engine():
+    """The same list lives in models.py and scoring_engine.py; they must never drift."""
+    assert set(get_args(Occasion)) == VALID_OCCASIONS
