@@ -58,7 +58,7 @@ LLM  ->  final selection + natural language styling advice
 - [✅] Clothing recognition via OpenAI Vision API
 - [✅] Weather integration
 - [✅] Multi-dimensional scoring engine
-- [ ] LLM recommendation layer
+- [✅] LLM recommendation layer
 - [ ] Streamlit frontend
 - [ ] Error handling and edge cases
 - [ ] Docker containerization
@@ -153,3 +153,18 @@ background jobs.
 - Fashion trend analysis module
 - Outfit history and feedback loop for personalized ranking
 - Mobile client
+
+**Does the shortlist actually save tokens?**
+
+Measured with `python -m scripts.measure_tokens` (tiktoken, o200k_base, synthetic wardrobes):
+
+| Wardrobe size | Whole wardrobe | Shortlist | Change |
+|---|---|---|---|
+| 6   | 280  | 476 | +70% |
+| 20  | 590  | 495 | −16% |
+| 50  | 1244 | 471 | −62% |
+| 100 | 2316 | 473 | −80% |
+
+The shortlist prompt stays at ~475 tokens no matter how large the wardrobe gets, while
+sending the whole wardrobe grows linearly. Below roughly 15 items the shortlist is
+actually larger, because candidates repeat garments and carry scores.
