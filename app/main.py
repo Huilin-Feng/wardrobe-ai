@@ -22,6 +22,7 @@ from app.models import ClothingCreate, ClothingResponse, RecommendRequest
 from app.clothing_analyzer import ClothingAnalysisError, analyze_clothing
 from app.weather_service import CityNotFoundError, WeatherServiceError, get_weather
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI(
@@ -38,6 +39,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve uploaded photos so the frontend can display them at /uploads/<file>.
+Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
