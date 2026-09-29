@@ -1,5 +1,7 @@
 # AI Wardrobe Assistant
 
+![CI](https://github.com/Huilin-Feng/wardrobe-ai/actions/workflows/ci.yml/badge.svg)
+
 > AI-powered outfit recommendation engine with multi-dimensional scoring
 
 An intelligent wardrobe manager that recognizes clothing items from uploaded photos
