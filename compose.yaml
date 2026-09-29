@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    env_file: .env
+    environment:
+      # Inside the container the database lives on a volume, not next to the code.
+      DATABASE_URL: sqlite:////code/data/wardrobe.db
+      # The containerised frontend is served on port 8080, so that origin must be allowed.
+      CORS_ORIGINS: '["http://localhost:8080"]'
+    ports:
+      - "8000:8000"
+    volumes:
+      - wardrobe-data:/code/data
+      - wardrobe-uploads:/code/uploads
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  wardrobe-data:
+  wardrobe-uploads:

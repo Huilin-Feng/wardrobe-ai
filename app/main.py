@@ -23,12 +23,20 @@ from app.clothing_analyzer import ClothingAnalysisError, analyze_clothing
 from app.weather_service import CityNotFoundError, WeatherServiceError, get_weather
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Runs once when the server starts (before yield) and once when it stops (after)."""
+    init_db()
+    yield
 
 app = FastAPI(
     title="AI Wardrobe Assistant",
     description="Outfit recommendation engine with multi-dimensional scoring",
     version="0.1.0",
+    lifespan = lifespan,
 )
 
 # The browser blocks cross-origin responses unless the server explicitly allows
@@ -46,12 +54,6 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads"
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
-
-@app.on_event("startup")
-def on_startup() -> None:
-    """Create tables and make sure the upload directory exists."""
-    init_db()
-    Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 
 
 @app.get("/")
