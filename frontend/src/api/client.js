@@ -30,11 +30,19 @@ export function imageUrl(item) {
   return `${API_BASE_URL}/${path}`
 }
 
-// FastAPI puts error details in response.data.detail, sometimes as a string,
-// sometimes as an object (e.g. the missing-category error from /api/recommend).
+// FastAPI puts error details in response.data.detail in three shapes:
+// a string, an object from our own handlers, or a list from request validation.
 export function describeError(error) {
   const detail = error.response?.data?.detail
   if (typeof detail === 'string') return detail
+  if (detail?.missing?.length) return `${detail.message}: ${detail.missing.join(', ')}`
   if (detail?.message) return detail.message
+  if (Array.isArray(detail)) return detail.map((d) => d.msg).join('; ')
   return error.message
+}
+
+export async function recommendOutfit(city, occasion) {
+  // Weather lookup plus an LLM call can take a while; allow more than the default.
+  const response = await api.post('/api/recommend', { city, occasion }, { timeout: 60000 })
+  return response.data
 }

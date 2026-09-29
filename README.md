@@ -59,8 +59,8 @@ LLM  ->  final selection + natural language styling advice
 - [✅] Weather integration
 - [✅] Multi-dimensional scoring engine
 - [✅] LLM recommendation layer
-- [ ] Streamlit frontend
-- [ ] Error handling and edge cases
+- [✅] Streamlit frontend
+- [✅] Error handling and edge cases
 - [ ] Docker containerization
 - [ ] GitHub Actions CI pipeline
 - [ ] AWS deployment with S3 image storage

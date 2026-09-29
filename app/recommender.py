@@ -86,7 +86,7 @@ def _parse_response(content: str, candidate_count: int) -> dict:
     return {"recommended_index": index, "reasons": reasons, "tips": tips}
 
 
-SCORE_FIELDS = ("total", "temperature", "occasion", "color")
+SCORE_FIELDS = ("total", "temperature", "temperature_avg", "occasion", "color")
 
 
 def _present(outfit: dict) -> dict:

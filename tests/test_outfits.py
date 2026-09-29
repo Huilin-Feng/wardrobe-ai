@@ -175,3 +175,26 @@ def test_shortlist_does_not_penalize_thin_top_when_layering_is_possible():
 def test_shortlist_does_judge_top_warmth_when_no_outerwear_is_allowed():
     sweater = garment(1, "top", 5, "casual")
     assert _shortlist_score(sweater, 35, "casual") < 1.0
+
+# ---------- tie-breaking ----------
+
+def test_equal_totals_are_ordered_by_average_temperature():
+    """Reproduces the San Jose 31°C case: shared jeans and shoes cap every outfit's
+    temperature score, so the totals tie and only the average can tell the tops apart."""
+    wardrobe = [
+        garment(1, "top", 1, "casual", "#D8C3A5"),     # beige tank top
+        garment(2, "top", 2, "casual", "#F6EB61"),     # yellow knit polo
+        garment(3, "bottom", 2, "casual", "#1E3A5F"),  # navy jeans
+        garment(4, "shoes", 2, "casual", "#FFFFFF"),   # white sneakers
+    ]
+    first, second = generate_outfit_candidates(wardrobe, 31, "casual")
+
+    assert first["total"] == pytest.approx(second["total"])
+    assert 1 in first["item_ids"]
+    assert 2 in second["item_ids"]
+    assert first["temperature_avg"] > second["temperature_avg"]
+
+
+def test_average_temperature_never_below_minimum():
+    for outfit in generate_outfit_candidates(basic_wardrobe(), 20, "casual"):
+        assert outfit["temperature_avg"] >= outfit["temperature"]

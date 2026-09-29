@@ -184,11 +184,16 @@ def score_outfit(
     garments = [g for g in (top, bottom, shoes, outerwear) if g is not None]
 
     # Hard constraint: the least suitable part decides.
-    temperature = min(
+    part_temperatures = [
         temperature_score(_upper_body_warmth(top, outerwear), temp_celsius),
         temperature_score(bottom["warmth_level"], temp_celsius, LOWER_BODY_MAX_IDEAL_WARMTH),
         temperature_score(shoes["warmth_level"], temp_celsius, LOWER_BODY_MAX_IDEAL_WARMTH),
-    )
+    ]
+    # Hard constraint: the least suitable part decides the score...
+    temperature = min(part_temperatures)
+    # ...but min hides differences between the other parts, so the average is
+    # kept as a tie-breaker for outfits whose totals come out equal.
+    temperature_avg = sum(part_temperatures) / len(part_temperatures)
 
     # Hard constraint: one garment that is wrong for the occasion ruins the outfit.
     occasion_fit = min(occasion_score(g["style"], occasion) for g in garments)
@@ -207,6 +212,7 @@ def score_outfit(
         "item_ids": [g["id"] for g in garments],
         "total": total,
         "temperature": temperature,
+        "temperature_avg": temperature_avg, 
         "occasion": occasion_fit,
         "color": color,
     }
@@ -273,5 +279,11 @@ def generate_outfit_candidates(
         score_outfit(top, bottom, shoe, outer, temp_celsius, occasion)
         for top, bottom, shoe, outer in product(tops, bottoms, shoes, outerwear_options)
     ]
-    outfits.sort(key=lambda outfit: outfit["total"], reverse=True)
+    
+    # Totals that should be equal can differ in the last float digits, so they are
+    # compared rounded; the average temperature then breaks genuine ties.
+    outfits.sort(
+        key=lambda outfit: (round(outfit["total"], 6), outfit["temperature_avg"]),
+        reverse=True,
+    )
     return outfits[:top_n]

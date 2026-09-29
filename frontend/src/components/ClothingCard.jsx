@@ -1,22 +1,13 @@
-import { useState } from 'react'
-import { imageUrl } from '../api/client'
+import GarmentImage from './GarmentImage'
 
 export default function ClothingCard({ item, onDelete, deleting }) {
-  const [imageFailed, setImageFailed] = useState(false)
-
   return (
     <article className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-      {/* The garment's own color fills the frame if the photo is missing. */}
-        <div className="aspect-square border-b border-stone-200" style={{ backgroundColor: item.hex_color }}>
-        {!imageFailed && (
-          <img
-            src={imageUrl(item)}
-            alt={item.description || `${item.color} ${item.category}`}
-            className="h-full w-full object-cover"
-            onError={() => setImageFailed(true)}
-          />
-        )}
-      </div>
+      <GarmentImage
+        item={item}
+        alt={item.description || `${item.color} ${item.category}`}
+        className="border-b border-stone-200"
+      />
 
       <div className="space-y-3 p-3">
         <div className="flex items-center gap-2">
@@ -25,9 +16,7 @@ export default function ClothingCard({ item, onDelete, deleting }) {
             style={{ backgroundColor: item.hex_color }}
             aria-hidden="true"
           />
-          <p className="truncate text-sm font-medium capitalize text-stone-900">
-            {item.color}
-          </p>
+          <p className="truncate text-sm font-medium capitalize text-stone-900">{item.color}</p>
         </div>
 
         <dl className="grid grid-cols-2 gap-y-1 text-xs">
