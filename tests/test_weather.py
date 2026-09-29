@@ -9,7 +9,12 @@ from app.weather_service import (
     _parse_weather,
     get_weather,
 )
+from app.config import settings
 
+@pytest.fixture(autouse=True)
+def fake_weather_key(monkeypatch):
+    """Tests must not depend on a real key in the developer's .env file."""
+    monkeypatch.setattr(settings, "weather_api_key", "test-key")
 
 # ---------- _parse_weather ----------
 
@@ -123,4 +128,9 @@ def test_get_weather_wraps_network_failure(mock_get):
     mock_get.side_effect = requests.ConnectionError("network down")
 
     with pytest.raises(WeatherServiceError, match="Weather request failed"):
+        get_weather("Boston")
+
+def test_get_weather_requires_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "weather_api_key", "")
+    with pytest.raises(WeatherServiceError, match="not configured"):
         get_weather("Boston")
