@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     weather_api_key: str = ""
     database_url: str = "sqlite:///./wardrobe.db"
     upload_dir: str = "./uploads"
+    cors_origins: list[str] = ["http://localhost:5173"]
 
 
 # Single shared instance — import this everywhere instead of creating new ones

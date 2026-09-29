@@ -21,12 +21,22 @@ from app.database import (
 from app.models import ClothingCreate, ClothingResponse, RecommendRequest
 from app.clothing_analyzer import ClothingAnalysisError, analyze_clothing
 from app.weather_service import CityNotFoundError, WeatherServiceError, get_weather
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(
     title="AI Wardrobe Assistant",
     description="Outfit recommendation engine with multi-dimensional scoring",
     version="0.1.0",
+)
+
+# The browser blocks cross-origin responses unless the server explicitly allows
+# the origin. The React dev server runs on a different port, so it must be listed.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
