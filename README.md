@@ -63,8 +63,8 @@ LLM  ->  final selection + natural language styling advice
 - [✅] LLM recommendation layer
 - [✅] Streamlit frontend
 - [✅] Error handling and edge cases
-- [ ] Docker containerization
-- [ ] GitHub Actions CI pipeline
+- [✅] Docker containerization
+- [✅] GitHub Actions CI pipeline
 - [ ] AWS deployment with S3 image storage
 
 ---
