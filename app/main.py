@@ -24,6 +24,8 @@ from app.weather_service import CityNotFoundError, WeatherServiceError, get_weat
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from fastapi.responses import RedirectResponse
+from app.storage import get_storage
 
 
 @asynccontextmanager
@@ -48,9 +50,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve uploaded photos so the frontend can display them at /uploads/<file>.
+# Uploads are always written here first, because the analyzer reads from disk.
 Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+
+# Photos are served at /uploads/<file>. Locally they come straight off the disk;
+# with S3 the API answers with a short-lived presigned URL and the browser
+# downloads the image directly from the private bucket.
+if settings.storage_backend == "s3":
+
+    @app.get("/uploads/{filename}")
+    def get_upload(filename: str) -> RedirectResponse:
+        return RedirectResponse(get_storage().presigned_url(filename))
+
+else:
+    app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
@@ -119,6 +132,14 @@ def upload_clothing(file: UploadFile = File(...), db: Session = Depends(get_db))
     except ClothingAnalysisError as error:
         os.remove(stored_path)
         raise HTTPException(status_code=502, detail=str(error)) from error
+
+    # Locally this is a no-op; with S3 it moves the file into the bucket.
+    try:
+        get_storage().persist(stored_path)
+    except Exception as error:
+        if os.path.exists(stored_path):
+            os.remove(stored_path)
+        raise HTTPException(status_code=502, detail="Could not store the photo") from error
 
     return add_item(db, image_url=stored_path, **attributes)
 

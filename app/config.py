@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     weather_api_key: str = ""
     database_url: str = "sqlite:///./wardrobe.db"
     upload_dir: str = "./uploads"
+    # "local" keeps photos on disk (development, tests, CI); "s3" moves them to a private bucket.
+    storage_backend: str = "local"
+    s3_bucket: str = ""
+    aws_region: str = "us-east-2"
+    presigned_url_ttl: int = 300
     cors_origins: list[str] = ["http://localhost:5173"]
 
 
