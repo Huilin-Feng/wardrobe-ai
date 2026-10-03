@@ -2,6 +2,8 @@
 
 ![CI](https://github.com/Huilin-Feng/wardrobe-ai/actions/workflows/ci.yml/badge.svg)
 
+**Live demo:** http://16.59.13.144 — running on AWS EC2 (Docker Compose behind nginx)
+
 > AI-powered outfit recommendation engine with multi-dimensional scoring
 
 An intelligent wardrobe manager that recognizes clothing items from uploaded photos
