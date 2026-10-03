@@ -49,7 +49,7 @@ LLM  ->  final selection + natural language styling advice
 | AI | OpenAI Vision API, GPT-4o-mini |
 | External APIs | OpenWeatherMap |
 | Frontend | React, Vite, Tailwind CSS |
-| Infrastructure | Docker Compose, nginx, AWS EC2 |
+| Infrastructure | Docker Compose, nginx, AWS (EC2, S3, IAM), Elastic IP |
 | CI/CD | GitHub Actions |
 | Testing | pytest |
 
