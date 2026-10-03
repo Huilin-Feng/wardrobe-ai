@@ -46,8 +46,8 @@ LLM  ->  final selection + natural language styling advice
 | Database | SQLite (dev), PostgreSQL (production) |
 | AI | OpenAI Vision API, GPT-4o-mini |
 | External APIs | OpenWeatherMap |
-| Frontend | Streamlit |
-| Infrastructure | Docker, AWS (EC2, S3) |
+| Frontend | React, Vite, Tailwind CSS |
+| Infrastructure | Docker Compose, nginx, AWS EC2 |
 | CI/CD | GitHub Actions |
 | Testing | pytest |
 
@@ -61,7 +61,7 @@ LLM  ->  final selection + natural language styling advice
 - [✅] Weather integration
 - [✅] Multi-dimensional scoring engine
 - [✅] LLM recommendation layer
-- [✅] Streamlit frontend
+- [✅] React frontend
 - [✅] Error handling and edge cases
 - [✅] Docker containerization
 - [✅] GitHub Actions CI pipeline
