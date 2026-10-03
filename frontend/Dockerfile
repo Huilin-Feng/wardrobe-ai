@@ -7,13 +7,14 @@ RUN npm ci
 
 COPY . .
 
-# Vite bakes this into the JavaScript at build time. It is the address the
-# user's browser uses to reach the API, so it must be reachable from the browser.
-ARG VITE_API_URL=http://localhost:8000
+# Vite bakes this into the JavaScript at build time.
+# Empty means "same origin": the browser calls the host that served the page,
+# and nginx forwards /api and /uploads to the backend container.
+ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Stage 2: serve only the built files. Node and the source code stay behind.
 FROM nginx:stable-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80

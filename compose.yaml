@@ -8,7 +8,7 @@ services:
       # The containerised frontend is served on port 8080, so that origin must be allowed.
       CORS_ORIGINS: '["http://localhost:8080"]'
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - wardrobe-data:/code/data
       - wardrobe-uploads:/code/uploads
@@ -17,9 +17,9 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:8000
+        VITE_API_URL: ""
     ports:
-      - "8080:80"
+      - "${WEB_PORT:-8080}:80"
     depends_on:
       - api
 
