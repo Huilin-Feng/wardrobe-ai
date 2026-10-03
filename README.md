@@ -65,7 +65,7 @@ LLM  ->  final selection + natural language styling advice
 - [✅] Error handling and edge cases
 - [✅] Docker containerization
 - [✅] GitHub Actions CI pipeline
-- [ ] AWS deployment with S3 image storage
+- [✅] AWS deployment with S3 image storage
 
 ---
 
