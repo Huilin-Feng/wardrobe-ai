@@ -17,4 +17,23 @@ uploads/*
 .idea/
 
 # macOS
+.DS_Store# --- Terraform -------------------------------------------------------------
+# Provider binaries downloaded by `terraform init` (hundreds of MB)
+**/.terraform/*
+# State can contain resource details and secrets; it lives locally, later in S3
+*.tfstate
+*.tfstate.*
+# Variable files hold personal values (email, home IP); commit only *.example
+*.tfvars
+*.tfvars.json
+# Saved plans
+tfplan
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# Note: DO commit infra/.terraform.lock.hcl (pins provider versions)
 .DS_Store

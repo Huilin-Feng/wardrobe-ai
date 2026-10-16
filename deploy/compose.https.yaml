@@ -1,0 +1,16 @@
+# Adds HTTPS once a Let's Encrypt certificate exists for DOMAIN_NAME.
+# deploy.sh includes this file only when /etc/letsencrypt/live/$DOMAIN_NAME exists.
+services:
+  web:
+    ports:
+      - "443:443"
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+    volumes:
+      # The nginx image renders /etc/nginx/templates/*.template into conf.d/ at
+      # startup. Only variables that are set (DOMAIN_NAME) are substituted, so
+      # nginx's own variables such as $host stay intact. The rendered file
+      # replaces the HTTP-only default.conf baked into the image.
+      - ./deploy/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      # Mount the whole directory: live/ contains symlinks into archive/.
+      - /etc/letsencrypt:/etc/letsencrypt:ro

@@ -74,6 +74,10 @@ def root() -> dict:
     """Health check."""
     return {"status": "ok", "service": "AI Wardrobe Assistant"}
 
+@app.get("/api/health")
+def health() -> dict[str, str]:
+    """Liveness probe used by deploys and external health checks."""
+    return {"status": "ok"}
 
 @app.get("/api/clothing", response_model=list[ClothingResponse])
 def list_clothing(category: str | None = None, db: Session = Depends(get_db)):

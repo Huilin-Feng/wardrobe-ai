@@ -9,4 +9,9 @@ frontend/
 tests/
 scripts/
 sample_images/
+.git/infra/
+deploy/
+docs/
+.github/
 .git/
+.DS_Store

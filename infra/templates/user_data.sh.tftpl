@@ -1,0 +1,57 @@
+#!/bin/bash
+# First-boot bootstrap for the wardrobe-ai host. Runs once, as root.
+# It prepares the machine but does not start the app: the first deploy comes
+# from GitHub Actions, exactly like every later one.
+#
+# Rendered by Terraform's templatefile(): dollar-brace placeholders are filled
+# in by Terraform, so the shell variables below are written without braces.
+set -euxo pipefail
+exec > >(tee -a /var/log/wardrobe-ai-bootstrap.log) 2>&1
+
+export DEBIAN_FRONTEND=noninteractive
+
+# 1. Swap. A t3.micro has 1 GiB of RAM; swap keeps image pulls and the
+#    Python process from being killed by the OOM killer.
+if [ ! -f /swapfile ]; then
+  fallocate -l 2G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
+# 2. Docker Engine and the Compose plugin from Docker's apt repository.
+apt-get update
+apt-get install -y ca-certificates curl git
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  > /etc/apt/sources.list.d/docker.list
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+usermod -aG docker ubuntu
+
+# 3. AWS CLI, certbot and the SSM agent (preinstalled on Canonical AMIs; installed if missing).
+snap wait system seed.loaded
+snap install aws-cli --classic
+snap install certbot --classic
+snap list amazon-ssm-agent >/dev/null 2>&1 || snap install amazon-ssm-agent --classic
+ln -sf /snap/bin/aws /usr/local/bin/aws
+ln -sf /snap/bin/certbot /usr/local/bin/certbot
+
+# 4. The two values deploy.sh needs to find everything else in Parameter Store.
+install -d -m 0755 /etc/wardrobe-ai
+cat > /etc/wardrobe-ai/bootstrap.env <<'CONFIG'
+AWS_REGION=${aws_region}
+SSM_PREFIX=${ssm_prefix}
+CONFIG
+
+# 5. The repository. Each deploy checks out the exact commit it ships, so the
+#    Compose files on disk always match the images being run.
+if [ ! -d /opt/wardrobe-ai/.git ]; then
+  git clone https://github.com/${github_repo}.git /opt/wardrobe-ai
+fi
+
+echo "Bootstrap finished"

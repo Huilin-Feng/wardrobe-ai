@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars (git-ignored) and edit.
+alert_email        = "you@example.com"
+monthly_budget_usd = "20"
+
+# Phase 5: move the Elastic IP to the new instance
+attach_eip = false
+
+# Phase 6: domain, HTTPS and health check
+domain_name         = ""
+route53_zone_id     = ""
+enable_health_check = false
+
+# Optional SSH. Default is none: connect with Session Manager.
+# ssh_ingress_cidr = "203.0.113.7/32"
+# ssh_key_name     = "my-key"
