@@ -5,7 +5,7 @@ from pathlib import Path
 from app.recommender import recommend_outfit
 from app.scoring_engine import IncompleteWardrobeError, generate_outfit_candidates
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, Query
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -157,6 +157,8 @@ def remove_clothing(item_id: int, db: Session = Depends(get_db)) -> None:
 @app.get("/api/weather")
 def weather(city: str, db: Session = Depends(get_db)) -> dict:
     """Return current weather for a city."""
+    if not city.strip():
+        raise HTTPException(status_code=400, detail="City name must not be empty")
     try:
         return get_weather(city)
     except CityNotFoundError as error:

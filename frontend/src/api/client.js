@@ -46,3 +46,8 @@ export async function recommendOutfit(city, occasion) {
   const response = await api.post('/api/recommend', { city, occasion }, { timeout: 60000 })
   return response.data
 }
+
+export async function getWeather(city) {
+  const response = await api.get('/api/weather', { params: { city } })
+  return response.data
+}

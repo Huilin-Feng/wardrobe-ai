@@ -1,14 +1,23 @@
 import { useState } from 'react'
+import ClosetPage from './pages/ClosetPage'
 import RecommendPage from './pages/RecommendPage'
 import WardrobePage from './pages/WardrobePage'
 
 const TABS = [
+  { id: 'closet', label: 'Closet' },
   { id: 'wardrobe', label: 'Wardrobe' },
   { id: 'recommend', label: 'Get dressed' },
 ]
 
+const PAGES = {
+  closet: ClosetPage,
+  wardrobe: WardrobePage,
+  recommend: RecommendPage,
+}
+
 export default function App() {
-  const [tab, setTab] = useState('wardrobe')
+  const [tab, setTab] = useState('closet')
+  const Page = PAGES[tab]
 
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900">
@@ -34,7 +43,7 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        {tab === 'wardrobe' ? <WardrobePage /> : <RecommendPage />}
+        <Page />
       </main>
     </div>
   )
